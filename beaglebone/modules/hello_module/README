@@ -1,0 +1,13 @@
+* Listing all running modules
+
+$ lsmod
+
+* Loading module
+
+$ sudo insmod <module.ko>
+
+* Unloading module
+
+$ sudo rmmod <module.ko>
+
+
