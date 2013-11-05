@@ -1,0 +1,33 @@
+[NOT YET FULLY OPERATIONAL]
+
+* Download latest source of dropbear
+
+* Configure
+=> Configure checks for dependencies and also creates the Makefile
+=> --prefix is used as prefix for installation path (has nothing to do with crosscompilation)
+=> Notice that CC point to the gcc compiler !
+
+$ CC=/home/bioboost/beaglebone/eewiki/gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux/bin/arm-linux-gnueabihf-gcc ./configure --host=i686-pc-linux-gnu --target=arm-linux --disable-zlib
+
+* Make
+
+$ make
+
+* Copy dropbear and dropbearkey to target platform
+
+* Make both files executable
+
+$ sudo chmod +x /etc/dropbear
+$ sudo chmod +x /etc/dropbearkey
+
+* Create server keys
+
+$ sudo /etc/dropbearkey -t rsa -f dropbear_rsa_host_key
+
+* Generate key on your host machine (UBUNTU)
+
+$ ssh-keygen -t rsa
+
+* Append public key to /home/debian/.ssh/authorized_keys
+
+* Check out README for additional information

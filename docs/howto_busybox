@@ -1,0 +1,11 @@
+* Download busybox source
+
+* Extract
+
+* Make the menuconfig
+
+$ make menuconfig ARCH=arm CROSS_COMPILE=/home/bioboost/beaglebone/eewiki/gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux/bin/arm-linux-gnueabihf-
+
+* Make
+
+$ make ARCH=arm CROSS_COMPILE=/home/bioboost/beaglebone/eewiki/gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux/bin/arm-linux-gnueabihf-
