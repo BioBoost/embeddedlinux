@@ -1,0 +1,149 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"><title>Embedded Linux Wiki Highlights</title>
+</head><body><ul><li>How to change language from Chinese to English: 
+<br>
+<a href="http://www.youtube.com/watch?v=PU_j3nEnyMI">http://www.youtube.com/watch?v=PU_j3nEnyMI</a>
+</li><li>USB firmware transfer tool: <a href="http://linuxbe.com/emb/files/s3c2410_boot_usb">s3c2410_boot_usb</a> - was compiled following: http://www.friendlyarm.net/forum/topic/3386
+</li><li>the original firmware: <a href="http://linuxbe.com/emb/files/factory_setup.zip">factory_setup.zip</a>
+</li><li>our uboot image: <a href="http://linuxbe.com/emb/files/u-boot-256M.bin">u-boot-256M.bin</a>
+</li><li>our hacked fullscreen fancybrowser (QT webkit): <a href="http://linuxbe.com/emb/fancybrowser.tgz">fancybrowser.tgz</a>
+</li><li>a working rootfilesystem with webkit and such: <a href="http://linuxbe.com/emb/rootfs-web.jffs2">rootfs-web.jffs2</a>
+</li><li>A working kernel: <a href="http://linuxbe.com/emb/files/uImage">uImage</a>
+</li><li>Factory kernel:<a href="http://linuxbe.com/emb/files/uImage_from_factory_zImage">uImage_from_factory_zImage</a>
+</li><li>Buildroot config: <a href="http://linuxbe.com/emb/files/buildroot-config-08-2013">buildroot-config-08-2013</a>. Download this file and put it in the extracted buildroot directory. Rename the file to .config and run make
+</li><li>Change leds directly through /sys/class/gpio/gpioN/value which is N on the mini2440?
+</li><li><b>Put uboot on the mini2440</b><br>
+By first downloading the s3c2410_boot_usb, and the u-boot-256M.bin 
+files. 
+Second, switch to NOR and reboot with minicom running.
+In minicom, type 'v' to 'download vivi', and while the usb device-cable 
+is connected, run in another terminal ./s3c2410_boot_usb u-boot-256M.bin<br>
+Possibly chmod 755 s3c2410_boot_usb first.<br>
+Now we have uboot on the NAND flash on our bord, we can test that by 
+booting into NAND. However our work isn't done yet. The uboot-env 
+partition isn't working and we don't have a bad block table on the NAND 
+flash yet.
+To put that on the NAND, we will have to erase uboot however. No, 
+problem, after erasing it, we will put uboot back:<br>
+nand scrub<br>
+nand createbbt<br>
+dynpart<br>
+dynenv set u-boot_env<br>
+reset<br>
+Now we need to put u-boot back. So boot in NOR, in supervivi 'send vivi', ./s3c2410_boot_usb u-boot-256M.bin and boot in NAND.<br>
+Also enable the u-boot_env parition back:<br>
+dynpart<br>
+dynenv set u-boot_env<br>
+saveenv<br>
+reset<br>
+Now we test if uboot environment works in the u-boot prompt:<br>
+setenv foo bar<br>
+saveenv<br>
+reset<br>
+printenv<br>
+If everything is ok, the foo=bar will be visible.<br><p>
+</p></li><li><b>Booting from the network using TFTP and NFS</b>
+Following the boot sequence, the following needs to be accomplished:<br>
+Uboot needs to be configured to get an IP adres (dhcp) and get the linux
+ kernel image over TFTP. For this we need a tftp server on our 
+workstation.<br>
+Then we also need to set in uboot the boot arguments for the kernel to 
+use a NFS server as root filesystem. For that we need an nfs server on 
+our workstation.<br>
+The kernel also needs to be able to boot over nfs, so we need to change or verify the kernel configuration.<br>
+So here are the commands (out of my head - might need some tweaking):<br>
+On the workstation to install tftpd and nfs server:<br>
+apt-get install nfs-kernel-server tftpd-hpa
+<br>We need to put the uImage file in the /var/lib/tftpboot directory to
+ be able to be transferred. It can be practical to test if the tftp 
+server works by using a tftp client on our workstation and try to get 
+uImage file locally to the /tmp directory:<br>
+cp /usr/src/buildroot/output/images/uImage /var/lib/tftpboot
+<br>cd /tmp
+<br>tftp localhost
+<br> get uImage
+<br>ls
+<br>If this works, we know the tftp server is ready to serve our kernel to the board.
+<br>So let's put something on the NFS server first, we can export a 
+directory with nfs in the /etc/exports file, add this line to it:
+<br>/export/mini2440/ *(rw,no_root_squash)
+<br>exportfs -a
+<br>Be aware that we serve it to any IP on the network.
+<br>mkdir /export/mini2440
+<br>cp /usr/src/buildroot/output/images/rootfs.tar /export/mini2440/
+<br>cd /export/mini2440/
+<br>tar xvf rootfs.tar
+<br>
+<br>We could test out on a fellow student his or her laptop if the exported nfs is visible and if we can mount it.
+<br>Or we could try it right away if we feel lucky :)
+<br>
+<br>How to try it? Look at our book for the exact nfs kernel arguments 
+to be provided on page 295. The uboot environment variable for the tftp 
+server is set in this way:<br>
+In uboot we do:<br>
+setenv bootargs root=/dev/nfs nfsroot=192.168.1.12:/export/mini2440 ip=dhcp console=ttySAC0,115200 <br>
+setenv tftpip=192.168.1.12
+<br>Where you provide the IP adres of your laptop instead of .12
+<br>We can get an IP in uboot by doing dhcp:
+<br>dhcp
+<br>And get the uImage over tftp<br>
+tftp 0x32000000 uImage
+<br>Now you should see lots of #-signs to indicate the uImage file 
+transfer. They might stutter over the wifi connection to your laptop.
+<br>saveenv
+<br>bootm 0x32000000
+<br>If we don't get a kernel panic we have probably booted over nfs. Verify by doing df to check how much diskspace we have.
+<br>
+<br>
+<br>
+<br>Verify if NFS root capabilities are part of the linux kernel:
+<br>cd /usr/src/buildroot 
+<br>make linux-menuconfig
+<br>This is not the general buildroot menuconfig, but the menuconfig 
+specific for the linux kernel. If we download the linux kernel outside 
+of buildroot and run in the source directory 'make menuconfig ARCH=arm',
+ we would get the same screen.
+<br>Inside this menuconfig we are going to look for NFS root capability:
+<br>Filesystems -- Network Filesystems -- Root Filesystem over NFS
+<br>On the git version this is already enabled. If it would not be 
+visible, it might be necessary to enable 'kernel IP configuration first.
+ This is located on a completely different location:
+<br>Networking Support -- Networking Options -- IP: Kernel level autoconfiguration
+<br>Best to enable DHCP and BOOTP there (already the case on the git version of august 2013).
+<br>otherwise, after making changes, run make again and use this newer kernel.
+<br>
+</li><li><b>Change the MAC address in uboot</b><br>
+setenv ethaddr 01:02:03:04:05:06<br>
+Please ensure you have a random or different mac address on your board 
+than the other people on the network, otherwise switches get confused 
+and you don't have a reliable network connection.<br>
+</li><li><b>Touchscreen</b><br>
+By default the screen brightness is turned off, turn it on with:<br>
+echo 255 &gt; /sys/class/leds/backlight/brightness<br>
+Look at this patch: <a href="https://patchwork.kernel.org/patch/1169951/">https://patchwork.kernel.org/patch/1169951/</a><br>
+Or download 3.6.2 with ts capabilities <a href="http://linuxbe.com/emb/files/uImage-3.6.2-ts">here</a><br>Also add this kernel argument in uboot: mini2440=3tb<br>
+And for the touchscreen interaction to work, we need to put some environmental variables too:<br>
+<br>ln -s /dev/input/event0 /dev/ts
+<br>export TSLIB_TSDEVICE=/dev/input/event0
+<br>export TSLIB_CALIBFILE=/etc/pointercal
+<br>export TSLIB_CONFFILE=/etc/ts.conf
+<br>export QWS_MOUSE_PROTO=Tslib
+<br>I like to use the fancybrowser app to connect to a web server running locally to create an interface written in php:
+<br>/usr/share/qt/examples/webkit/fancybrowser/fancybrowser -qws 
+-geometry 320x240+0+0 -decoration Default http://localhost/linux-php.php
+ 
+<br>For this, I also run a patched version of fancybrowser without 
+window dressing (done by stripping some code and creating a decoration 
+with nothing:<br>
+<a href="http://linuxbe.com/emb/files/fancybrowser.tgz">fancybrowser.tgz</a><br>
+</li><li><b>Update uboot env from within Linux</b><br>
+First we need to add the Uboot tools fw_printenv/fw_setenv in buildroot.<br>
+Then we need a configuration file in Linux which explains how the internal NAND flash is partitioned.<br>
+This file is called: /etc/fw_env.config<br>
+Content should be in this format:<br>
+/dev/mtd1 0x0 0x20000 0x20000<br>
+If this is not correct, verify in uboot with dynpart what the offset of the partition is.
+
+
+
+</li></ul></body></html>
