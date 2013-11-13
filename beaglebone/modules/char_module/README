@@ -1,0 +1,8 @@
+# Load the module
+> sudo insmod charmod.ko
+
+# Check the kernel messages for the major number to use to create device node
+> dmesg | tail
+> sudo mknod /dev/bbt_charmod c <MAJ> 0
+
+# Next launch the userapp using sudo and happy transfering
