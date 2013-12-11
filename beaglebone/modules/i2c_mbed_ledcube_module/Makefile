@@ -9,8 +9,10 @@ CC := /home/bioboost/beaglebone/eewiki/gcc-linaro-arm-linux-gnueabihf-4.8-2013.0
 
 all:
 	$(MAKE) ARCH=arm CROSS_COMPILE=$(CC) -C $(KDIR) M=$$PWD modules
+	$(CC)gcc userapp.c -o userapp
 
 clean:
 	$(MAKE) ARCH=arm CROSS_COMPILE=$(CC) -C $(KDIR) M=$$PWD clean
+	rm -f *.o userapp
 
 endif
