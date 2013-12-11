@@ -13,6 +13,7 @@ struct semaphore sem;	// Synchronization
 int ret;				// Used to hold return values of functions; Safe on kernel stack space !
 
 #define I2C_BUFFER_SIZE 21
+#define CUBE_DATA_BYTES 20
 char buffer[I2C_BUFFER_SIZE];		// Simple buffer
 
 // To later register our device we need a cdev instance and some other variables
@@ -80,7 +81,33 @@ int device_close(struct inode* inode, struct file* filep)
 */
 ssize_t device_write(struct file* filep, const char* buffSourceData, size_t buffCount, loff_t* currOffset)
 {
-	pr_alert("mbed_cube: write method called\n");
+	int i;
+
+	// buffCount cannot exceed PAGE_SIZE
+	if (buffCount > CUBE_DATA_BYTES) {
+		pr_alert("mbed_cube: buffCount to big (max 20)\n");
+		return -1;
+	}
+
+	// Fetch data from user space to kernel space
+	// copy_from_user(destination, source, sizeToTransfer)
+	ret = copy_from_user((buffer+1), buffSourceData, buffCount);
+	if (ret != 0) {
+		pr_alert("mbed_cube: could not copy data from user to kernel space\n");
+		return -1;
+	}
+
+	// Clear remaining data (may not be good solution but for the moment we use this)
+	for (i = buffCount+1; i < I2C_BUFFER_SIZE; i++) {
+		buffer[i] = 0;
+	}
+
+	// Send the data to the mbed device (currently we only use first page)
+	buffer[0] = 0x00;		// Write cube command
+	ret = i2c_master_send(i2cclient, buffer, I2C_BUFFER_SIZE);
+	if (ret != I2C_BUFFER_SIZE) {
+		pr_alert("mbed_cube: could not send data to device\n");
+	}
 
 	return ret;
 }
@@ -181,22 +208,3 @@ module_i2c_driver(mbed_driver);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Simple i2c driver for mbed cube");
 MODULE_AUTHOR("Nico De Witte");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
