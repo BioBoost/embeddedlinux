@@ -21,20 +21,20 @@ int major_number;	// Extracted from dev_t using macro - mknod /dev/<file> c majo
 dev_t dev_num;		// Will hold major number that the kernel gives us
 
 // name -> appears in /proc/devices
-#define DEVICE_NAME		"mbed"
+#define DEVICE_NAME		"mbed_cube"
 
 // Points to the i2c client device
 struct i2c_client *i2cclient;
 
 static const struct i2c_device_id mbed_id[] = {
-	{ "mbed", 0 },
+	{ "mbed_cube", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, mbed_id);
 
 #ifdef CONFIG_OF
 static const struct of_device_id mbed_dt_ids[] = {
-	{ .compatible = "bioboost,mbed", },
+	{ .compatible = "bioboost,mbed_cube", },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, mbed_dt_ids);
@@ -50,11 +50,11 @@ int device_open(struct inode *inode, struct file *filep)
 	// Only allow one process to open this device by using a semaphore as mutual exclusive lock - mutex
 	if (down_interruptible(&sem) != 0)
 	{
-		pr_alert("mbed: could not lock device during open\n");
+		pr_alert("mbed_cube: could not lock device during open\n");
 		return -1;
 	}
 
-	pr_alert("mbed: opened device\n");
+	pr_alert("mbed_cube: opened device\n");
 	return 0;
 }
 
@@ -68,7 +68,7 @@ int device_close(struct inode* inode, struct file* filep)
 	// By calling up (opposite of down for semaphore) we release the mutex that we optained when
 	// we opened the device. This has the effect of allowing another process to use the device now
 	up(&sem);
-	pr_alert("mbed: closed device\n");
+	pr_alert("mbed_cube: closed device\n");
 	return 0;
 }
 
@@ -80,7 +80,7 @@ int device_close(struct inode* inode, struct file* filep)
 */
 ssize_t device_write(struct file* filep, const char* buffSourceData, size_t buffCount, loff_t* currOffset)
 {
-	pr_alert("mbed: write method called\n");
+	pr_alert("mbed_cube: write method called\n");
 
 	return ret;
 }
@@ -102,22 +102,22 @@ struct file_operations fops = {
 */
 static int mbed_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
-	pr_alert("mbed: probe function called\n");
+	pr_alert("mbed_cube: probe function called\n");
 
 	// Use dynamic allocation to assign our device a major number
 	// -- alloc_chrdev_region(dev_t*, uint fminor, uint count, char* name)
 
 	ret = alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);		//dev_num will hold maj number after this call
 	if (ret < 0) {
-		pr_alert("mbed: failed to allocate a major number\n");
+		pr_alert("mbed_cube: failed to allocate a major number\n");
 		return ret;		// propage error code
 	}
-	pr_alert("mbed: module loaded\n");
+	pr_alert("mbed_cube: module loaded\n");
 
 	// Extract the major number
 	major_number = MAJOR(dev_num);		// Macro to extract the major number and store it in our var
-	pr_alert("mbed: major number is %d\n", major_number);
-	pr_alert("mbed: Use mknod /dev/%s c %d 0 for device file\n", DEVICE_NAME, major_number);
+	pr_alert("mbed_cube: major number is %d\n", major_number);
+	pr_alert("mbed_cube: Use mknod /dev/%s c %d 0 for device file\n", DEVICE_NAME, major_number);
 
 	// Allocate character device structure and initialize
 	mcdev = cdev_alloc();			// Create our cdev structure, initialize our cdev structure
@@ -128,7 +128,7 @@ static int mbed_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	// int cdev_add(struct cdev* dev, dev_t num, unsigned int count)
 	ret = cdev_add(mcdev, dev_num, 1);
 	if (ret < 0) {
-		pr_alert("mbed: unable to add cdev to kernel\n");
+		pr_alert("mbed_cube: unable to add cdev to kernel\n");
 		return ret;
 	}
 
@@ -147,14 +147,14 @@ static int mbed_probe(struct i2c_client *client, const struct i2c_device_id *id)
 */
 static int mbed_remove(struct i2c_client *client)
 {
-	pr_alert("mbed: remove function called\n");
+	pr_alert("mbed_cube: remove function called\n");
 
 	// Remove character device from the system
 	cdev_del(mcdev);
 
 	// Free the device numbers that we requested in probe
 	unregister_chrdev_region(dev_num, 1);
-	pr_alert("mbed: unloaded module\n");
+	pr_alert("mbed_cube: unloaded module\n");
 
 	i2cclient = NULL;
 
@@ -170,7 +170,7 @@ static struct i2c_driver mbed_driver = {
 	.remove = mbed_remove,
 	.id_table = mbed_id,
 	.driver = {
-		.name = "mbed",
+		.name = "mbed_cube",
 		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(mbed_dt_ids),
 	},
