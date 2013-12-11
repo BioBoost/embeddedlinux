@@ -1,6 +1,6 @@
 # Makefile for i2c mbed module
 ifneq ($(KERNELRELEASE),)
-obj-m := mbed_i2c_slave_ledcube.o
+obj-m := i2c_mbed_ledcube_module.o
 else
 
 # Hardcoded paths (need refactoring)
