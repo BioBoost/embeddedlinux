@@ -16,7 +16,7 @@ enum CUBE_CONSTANTS {
 };
 
 enum I2C_CONSTANTS {
-    I2C_SLAVE_ADDRESS = 0xD0,       // 0x68 on linux
+    I2C_SLAVE_ADDRESS = 0x90,       // 0x48 on linux
     I2C_FREQUENCY = 100000,
     I2C_BUFFER_SIZE = 21            // Command + 4bytes x 5 levels
 };

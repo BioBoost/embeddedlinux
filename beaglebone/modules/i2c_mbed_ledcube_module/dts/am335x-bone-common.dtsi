@@ -443,9 +443,9 @@
 	pinctrl-0 = <&i2c1_pins>;
 	status = "okay";
 
-	mbed_cube: mbed_cube@68 {		/* again address of i2c device */
+	mbed_cube: mbed_cube@48 {		/* again address of i2c device */
 		compatible = "bioboost,mbed_cube";
-		reg = <0x68>;	/* address of i2c device */
+		reg = <0x48>;	/* address of i2c device */
 	};
 };
 
