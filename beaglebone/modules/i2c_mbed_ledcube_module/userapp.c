@@ -2,12 +2,18 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>		// For sleep
+#include <time.h>
 
 #define DEVICE "/dev/mbed_cube"
 
 #define BUFFER_SIZE 20
 #define CUBE_LEVELS 5
 #define CUBE_LEVEL_LEDS 25
+
+#define FAST_MODE
+#ifdef FAST_MODE
+struct timespec sleeptime = { 0, 10000000 };	// 10ms
+#endif
 
 int main(void)
 {
@@ -40,11 +46,16 @@ int main(void)
 	{
 		for (c = 0; c < CUBE_LEVEL_LEDS; c++)
 		{
-			cubedata[l] = 0xF8000000 ^ (0x08000000 << l);
+			cubedata[l] = 0xF8000000 ^ (0x80000000 >> l);
 			cubedata[l] += ((0x00000001 << c) - 1);
 				
 			write(fd, ((char*)cubedata), BUFFER_SIZE);
+
+		#ifdef FAST_MODE
+			nanosleep(&sleeptime, NULL);
+		#else
 			sleep(1);
+		#endif
 
 			for (i = c; i < CUBE_LEVEL_LEDS; i++) 
 			{
@@ -52,7 +63,12 @@ int main(void)
 				cubedata[l] += ((0x00000001 << c) - 1) + (0x00000001 << i);
 				
 				write(fd, ((char*)cubedata), BUFFER_SIZE);
+
+			#ifdef FAST_MODE
+				nanosleep(&sleeptime, NULL);
+			#else
 				sleep(1);
+			#endif
 			}
 		}
 	}
